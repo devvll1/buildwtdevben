@@ -478,8 +478,8 @@ export default function Home() {
         <div className="space-y-1">
           <h2 id="spots-heading" className="text-xl font-semibold">Outdoor spots in Iloilo City</h2>
           <p className="text-sm text-muted-foreground">
-            Place details are based on the listed source and last checked date. Unverified
-            features are labeled so you know what still needs confirmation.
+            Place features are preliminary details reported by the linked online sources,
+            not recent on-site checks. Sun exposure and other unsupported details remain unverified.
           </p>
         </div>
 
@@ -587,7 +587,7 @@ export default function Home() {
                       </div>
                     </dl>
                     <div className="mt-auto border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
-                      <p>Details checked {formatCheckedDate(place.verified_at)}</p>
+                      <p>Source checked {formatCheckedDate(place.verified_at)}</p>
                       <a className="mt-1 inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground" href={place.source_url} target="_blank" rel="noreferrer">
                         Information source <ArrowUpRight aria-hidden="true" className="size-3.5" />
                       </a>
