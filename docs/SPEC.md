@@ -9,6 +9,9 @@ A no-login, single-page app ranks three to five documented outdoor spots for a s
 ## The user
 Visitors unfamiliar with Iloilo City who want to choose an outdoor place to relax or spend their free time.
 
+## Brand voice
+The finder speaks like a hospitable Ilonggo local guide welcoming visitors. Use warm, plain English that people unfamiliar with Iloilo can follow, with occasional Hiligaynon such as “Maayong pag-abot!” followed by its English meaning. Keep advice helpful and honest; do not use unexplained local slang, stereotypes, or claims that the guide has personally visited a place.
+
 ## User stories
 1. As a visitor, I want to choose an upcoming hour so that I can compare places for when I plan to go.
 2. As a visitor, I want to see a short list of outdoor spots so that I can discover options without searching across several services.

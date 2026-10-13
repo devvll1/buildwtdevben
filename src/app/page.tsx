@@ -97,57 +97,57 @@ function getWeatherScore(forecast: ForecastHour) {
 
   if (apparentTemperature >= 34) {
     score -= 18;
-    reasons.push("Very warm feels-like temperatures lower the estimate.");
+    reasons.push("It may feel very hot, which can make an outdoor break less comfortable.");
   } else if (apparentTemperature >= 30) {
     score -= 10;
-    reasons.push("Warm feels-like temperatures lower the estimate.");
+    reasons.push("It may feel warm, so look for shade if you head out.");
   } else if (apparentTemperature <= 22) {
     score += 8;
-    reasons.push("Milder temperatures support outdoor comfort.");
+    reasons.push("The milder temperature could make it a nice time to be outside.");
   } else {
-    reasons.push("Feels-like temperature is in the estimate’s middle range.");
+    reasons.push("The feels-like temperature looks fairly manageable.");
   }
 
   if (humidity >= 85) {
     score -= 14;
-    reasons.push("High humidity lowers the estimate.");
+    reasons.push("It may feel muggy, so take it easy and stay hydrated.");
   } else if (humidity >= 70) {
     score -= 7;
-    reasons.push("Elevated humidity slightly lowers the estimate.");
+    reasons.push("Humidity is on the high side and may make it feel warmer.");
   } else if (humidity <= 60) {
     score += 4;
-    reasons.push("Lower humidity supports outdoor comfort.");
+    reasons.push("Lower humidity may make the air feel more comfortable.");
   } else {
-    reasons.push("Humidity is in the estimate’s middle range.");
+    reasons.push("Humidity looks moderate for this forecast.");
   }
 
   if (windSpeed < 3) {
     score -= 4;
-    reasons.push("Very light wind provides little breeze.");
+    reasons.push("There may not be much of a breeze.");
   } else if (windSpeed <= 18) {
     score += 5;
-    reasons.push("Moderate forecast wind supports a pleasant breeze.");
+    reasons.push("A gentle-to-moderate breeze could make it pleasant outside.");
   } else if (windSpeed > 30) {
     score -= 7;
-    reasons.push("Strong forecast wind lowers the estimate.");
+    reasons.push("The wind may feel quite strong at this hour.");
   } else {
-    reasons.push("Forecast wind is outside the moderate-breeze range.");
+    reasons.push("The breeze may feel lighter or stronger than you’d like.");
   }
 
   if (rainChance >= 70) {
     score -= 25;
-    reasons.push("High rain probability weighs strongly against outdoor plans.");
+    reasons.push("Rain looks likely, so you may want to keep an indoor option handy.");
   } else if (rainChance >= 40) {
     score -= 14;
-    reasons.push("Rain is possible, which lowers the estimate.");
+    reasons.push("Rain is possible; bring an umbrella or choose a covered plan.");
   } else if (rainChance >= 20) {
     score -= 6;
-    reasons.push("Some rain risk slightly lowers the estimate.");
+    reasons.push("There’s a small chance of rain, so keep an eye on the sky.");
   } else if (rainChance <= 10) {
     score += 3;
-    reasons.push("Low rain probability supports outdoor plans.");
+    reasons.push("Rain looks unlikely, which is a nice sign for outdoor plans.");
   } else {
-    reasons.push("Rain probability is in the estimate’s middle range.");
+    reasons.push("There’s some uncertainty about rain at this hour.");
   }
 
   return { score, reasons };
@@ -161,57 +161,57 @@ function getPlaceAdjustment(place: Place, forecast: ForecastHour) {
 
   if (place.has_seating === true) {
     score += 4;
-    reasons.push("Recorded seating adds a small rest-friendly adjustment.");
+    reasons.push("The source reports seating, which could make resting easier.");
   } else if (place.has_seating === false) {
     score -= 3;
-    reasons.push("Seating is recorded as unavailable, so no seating benefit is included.");
+    reasons.push("The source doesn’t list seating, so I can’t count on a place to sit.");
   } else {
-    reasons.push("Seating is not verified and does not affect the estimate.");
+    reasons.push("Seating hasn’t been checked yet, so it doesn’t affect this estimate.");
   }
 
   if (place.has_trees === true && warmConditions) {
     score += 6;
-    reasons.push("Recorded trees add support in warm or humid conditions; they do not guarantee shade.");
+    reasons.push("Trees are reported here and may offer some relief in warm weather, though they don’t guarantee shade.");
   } else if (place.has_trees === false && warmConditions) {
-    reasons.push("No trees are recorded, so there is no tree-related adjustment; other shade may still exist.");
+    reasons.push("The source doesn’t list trees, though other kinds of shade may still be around.");
   } else if (place.has_trees === null) {
-    reasons.push("Trees are not verified and do not affect the estimate.");
+    reasons.push("Trees haven’t been checked yet, so they don’t affect this estimate.");
   } else {
-    reasons.push("Recorded trees do not change the estimate in these conditions.");
+    reasons.push("The trees listed for this spot don’t change the estimate in these conditions.");
   }
 
   const shadeDescription = place.shade_description?.toLowerCase() ?? "";
   if (warmConditions && shadeDescription) {
     if (/no shade|little shade|limited shade|full sun|direct sun|unshaded/.test(shadeDescription)) {
       score -= 6;
-      reasons.push(`Recorded shade detail (“${place.shade_description}”) lowers the estimate in warm or humid conditions.`);
+      reasons.push(`The listed shade detail (“${place.shade_description}”) may make warm weather feel tougher.`);
     } else if (/ample shade|good shade|mostly shaded|partial shade|tree shade|covered/.test(shadeDescription)) {
       score += 6;
-      reasons.push(`Recorded shade detail (“${place.shade_description}”) supports the estimate in warm or humid conditions.`);
+      reasons.push(`The listed shade detail (“${place.shade_description}”) could make a warm day more comfortable.`);
     } else {
-      reasons.push(`Shade detail (“${place.shade_description}”) is shown but not scored because its wording is not covered by the simple rules.`);
+      reasons.push(`The source mentions shade (“${place.shade_description}”), but I can’t tell from that detail how much comfort it adds.`);
     }
   } else if (!place.shade_description) {
-    reasons.push("Shade is not verified and does not affect the estimate.");
+    reasons.push("Shade hasn’t been checked yet, so it doesn’t affect this estimate.");
   } else {
-    reasons.push(`Recorded shade detail: ${place.shade_description}; it does not change the estimate in these conditions.`);
+    reasons.push(`The source mentions this shade detail: ${place.shade_description}.`);
   }
 
   const exposure = place.sun_exposure?.toLowerCase() ?? "";
   if (warmConditions && exposure) {
     if (/full sun|direct sun|high exposure|fully exposed/.test(exposure)) {
       score -= 5;
-      reasons.push(`Recorded sun exposure (“${place.sun_exposure}”) lowers the estimate in warm or humid conditions.`);
+      reasons.push(`The listed sun exposure (“${place.sun_exposure}”) may make warm weather feel tougher.`);
     } else if (/partial shade|mostly shaded|low exposure|shaded/.test(exposure)) {
       score += 5;
-      reasons.push(`Recorded sun exposure (“${place.sun_exposure}”) supports the estimate in warm or humid conditions.`);
+      reasons.push(`The listed sun exposure (“${place.sun_exposure}”) may help make a warm day more comfortable.`);
     } else {
-      reasons.push(`Sun exposure (“${place.sun_exposure}”) is shown but not scored by the simple rules.`);
+      reasons.push(`The source mentions sun exposure (“${place.sun_exposure}”), but I can’t tell how much comfort it adds.`);
     }
   } else if (!place.sun_exposure) {
-    reasons.push("Sun exposure is not verified and does not affect the estimate.");
+    reasons.push("Sun exposure hasn’t been checked yet, so it doesn’t affect this estimate.");
   } else {
-    reasons.push(`Recorded sun exposure: ${place.sun_exposure}; it does not change the estimate in these conditions.`);
+    reasons.push(`The source mentions this sun exposure: ${place.sun_exposure}.`);
   }
 
   return { score, reasons };
@@ -238,18 +238,18 @@ function rankPlaces(places: Place[], forecast: ForecastHour): ComfortEstimate[] 
     estimate.isTied = estimates.filter((candidate) => candidate.score === estimate.score).length > 1;
     estimate.label =
       estimate.score >= 70
-        ? "More favorable estimate"
+        ? "Looks like a comfy pick"
         : estimate.score >= 50
-          ? "Mixed conditions"
-          : "Less favorable estimate";
+          ? "Could be a nice fit"
+          : "Weather may feel tough";
   });
 
   return estimates;
 }
 
 function recordedValue(value: boolean | null) {
-  if (value === null) return "Not verified";
-  return value ? "Available" : "Not recorded";
+  if (value === null) return "Not checked yet";
+  return value ? "Reported online" : "Not listed by the source";
 }
 
 function formatCheckedDate(value: string) {
@@ -380,19 +380,19 @@ export default function Home() {
           <Leaf aria-hidden="true" className="size-3.5" /> Iloilo Outdoor Comfort Finder
         </span>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Find your kind of outside.
+          Maayong pag-abot!
         </h1>
         <p className="text-base leading-7 text-muted-foreground">
-          Explore outdoor places around Iloilo City. Compare their documented features
-          and open a spot in your map app to plan your visit.
+          <span className="block font-medium text-foreground">That means “Welcome!” in Hiligaynon. I’m your friendly Ilonggo guide to a little fresh air.</span>
+          <span className="mt-1 block">Let’s find you a spot to slow down, feel the breeze, or enjoy a quiet moment. Pick a forecast hour and I’ll help you compare.</span>
         </p>
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Hourly forecast for Iloilo City</CardTitle>
+          <CardTitle>How’s the weather looking?</CardTitle>
           <CardDescription>
-            Area-level forecast estimates from{" "}
+            A city forecast from{" "}
             <a
               className="underline underline-offset-4 hover:text-foreground"
               href="https://open-meteo.com/"
@@ -401,23 +401,23 @@ export default function Home() {
             >
               Open-Meteo
             </a>
-            . Conditions at an individual spot may differ.
+            . Each plaza can feel a little different, so think of this as a helpful heads-up.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {isForecastLoading ? (
             <p className="text-sm text-muted-foreground" role="status">
-              Loading the hourly forecast…
+              Taking a look at the forecast…
             </p>
           ) : hasForecastError ? (
             <p className="text-sm text-destructive" role="alert">
-              We couldn’t load the weather forecast. Check your connection and refresh the page to try again.
+              Oops, I can’t get the weather right now. Check your connection and refresh to try again.
             </p>
           ) : selectedForecast ? (
             <>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <label className="flex flex-col gap-2 text-sm font-medium" htmlFor="forecast-hour">
-                  Choose a forecast hour
+                  When are you thinking of heading out?
                   <select
                     className="h-10 min-w-56 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     id="forecast-hour"
@@ -468,7 +468,7 @@ export default function Home() {
             </>
           ) : (
             <p className="text-sm text-muted-foreground" role="status">
-              No upcoming forecast hours are currently available.
+              I can’t see any upcoming forecast hours right now. Please check back in a little while.
             </p>
           )}
         </CardContent>
@@ -476,46 +476,43 @@ export default function Home() {
 
       <section aria-labelledby="spots-heading" className="space-y-4">
         <div className="space-y-1">
-          <h2 id="spots-heading" className="text-xl font-semibold">Outdoor spots in Iloilo City</h2>
+          <h2 id="spots-heading" className="text-xl font-semibold">Let’s find a spot to unwind</h2>
           <p className="text-sm text-muted-foreground">
-            Place features are preliminary details reported by the linked online sources,
-            not recent on-site checks. Sun exposure and other unsupported details remain unverified.
+            Here’s what I found online. These details haven’t been checked on site recently, so I’ll mark anything I can’t confirm as not checked.
           </p>
         </div>
 
         {canRankSpots ? (
           <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
             <p>
-              These are rule-based comfort estimates for the selected forecast hour. The same area-level weather forecast is used for every spot; recorded shade, trees, sun exposure, and seating can change each spot’s estimate. Unverified features do not affect its score.
+              I match Iloilo’s forecast with the features reported for each spot. Trees, shade, and seating can help shape the estimate; details I haven’t checked won’t change it.
             </p>
             <p>
-              Estimates are not measurements or guarantees of the exact conditions at a spot.
-              {estimatesAreTied
-                ? " These places currently tie because the recorded features do not distinguish their estimates."
-                : " Spot details come from the source and check date shown on each card."}
+              It’s a helpful guide, not a promise of exactly what you’ll find when you get there.
+              {estimatesAreTied ? " These spots are tied for now based on the details available." : " You can check each card’s source for where its details came from."}
             </p>
           </div>
         ) : (
           <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground" role="status">
             {isForecastLoading
-              ? "The forecast is loading. Spots are shown alphabetically and will remain unranked until a complete forecast is available."
-              : "A complete forecast is not available, so there is no weather-based ranking. Spots are shown alphabetically without a current comfort estimate."}
+              ? "I’m checking the forecast. For now, here are the spots in alphabetical order."
+              : "I can’t make a weather-based comparison right now, so here are the spots in alphabetical order instead."}
           </p>
         )}
 
         {isLoading ? (
           <Card><CardContent className="p-6">
-            <p className="text-sm text-muted-foreground" role="status">Loading outdoor spots…</p>
+            <p className="text-sm text-muted-foreground" role="status">Getting the spots ready for you…</p>
           </CardContent></Card>
         ) : hasError ? (
           <Card><CardContent className="p-6">
             <p className="text-sm text-destructive" role="alert">
-              We couldn’t load the outdoor spots. Please check your connection and try refreshing the page.
+              I can’t load the spots right now. Check your connection and give the page another try.
             </p>
           </CardContent></Card>
         ) : places.length === 0 ? (
           <Card><CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">There are no outdoor spots in the catalog yet. Please check back later.</p>
+            <p className="text-sm text-muted-foreground">I’m still gathering places to share. Please come back soon.</p>
           </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -530,10 +527,10 @@ export default function Home() {
                         <CardTitle className="text-xl">{place.name}</CardTitle>
                         {estimate ? (
                           <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
-                            Rank #{estimate.rank}{estimate.isTied ? " (tie)" : ""} · {estimate.label}
+                            Pick #{estimate.rank}{estimate.isTied ? " (tied)" : ""} · {estimate.label}
                           </p>
                         ) : (
-                          <p className="text-sm text-muted-foreground">Not ranked</p>
+                          <p className="text-sm text-muted-foreground">Not compared yet</p>
                         )}
                         <CardDescription className="flex items-center gap-1.5">
                           <MapPin aria-hidden="true" className="size-3.5 shrink-0" /> Iloilo City
@@ -555,13 +552,13 @@ export default function Home() {
                     {estimate ? (
                       <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
                         <div>
-                          <p className="font-medium">Forecast factors</p>
+                            <p className="font-medium">Weather around your chosen hour</p>
                           <p className="mt-1 leading-6 text-muted-foreground">
                             Feels like {displayForecastValue(selectedForecast?.apparentTemperature ?? null, "°C")}, humidity {displayForecastValue(selectedForecast?.humidity ?? null, "%")}, wind {displayForecastValue(selectedForecast?.windSpeed ?? null, " km/h")}, and rain chance {displayForecastValue(selectedForecast?.precipitationProbability ?? null, "%")}. {estimate.forecastReasons.join(" ")}
                           </p>
                         </div>
                         <div>
-                          <p className="font-medium">Documented spot features</p>
+                          <p className="font-medium">What I found out about this spot</p>
                           <p className="mt-1 leading-6 text-muted-foreground">
                             {estimate.placeReasons.join(" ")}
                           </p>
@@ -571,7 +568,7 @@ export default function Home() {
                     <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                       <div className="space-y-1 rounded-lg bg-muted/60 p-3">
                         <dt className="flex items-center gap-2 font-medium"><Sun aria-hidden="true" className="size-4" />Shade</dt>
-                        <dd className="text-muted-foreground">{place.shade_description || "Not verified"}</dd>
+                        <dd className="text-muted-foreground">{place.shade_description || "Not checked yet"}</dd>
                       </div>
                       <div className="space-y-1 rounded-lg bg-muted/60 p-3">
                         <dt className="flex items-center gap-2 font-medium"><Trees aria-hidden="true" className="size-4" />Trees</dt>
@@ -583,13 +580,13 @@ export default function Home() {
                       </div>
                       <div className="space-y-1 rounded-lg bg-muted/60 p-3">
                         <dt className="flex items-center gap-2 font-medium"><Sun aria-hidden="true" className="size-4" />Sun exposure</dt>
-                        <dd className="text-muted-foreground">{place.sun_exposure || "Not verified"}</dd>
+                        <dd className="text-muted-foreground">{place.sun_exposure || "Not checked yet"}</dd>
                       </div>
                     </dl>
                     <div className="mt-auto border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
                       <p>Source checked {formatCheckedDate(place.verified_at)}</p>
                       <a className="mt-1 inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground" href={place.source_url} target="_blank" rel="noreferrer">
-                        Information source <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                        See where these details came from <ArrowUpRight aria-hidden="true" className="size-3.5" />
                       </a>
                     </div>
                   </CardContent>
