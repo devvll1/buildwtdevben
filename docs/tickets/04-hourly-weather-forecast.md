@@ -4,11 +4,11 @@
 
 **Blocked by:** 01.
 
-**Status:** todo
+**Status:** done
 
 - [x] The visitor can choose an upcoming forecast hour.
 - [x] The selected hour displays apparent temperature, humidity, wind speed, and precipitation probability.
 - [x] The forecast source and time are visible.
 - [x] The interface identifies the forecast as area-level information, not a measurement at an individual spot.
 - [x] A clear loading state and a helpful message appear if forecast data cannot be loaded.
-- [ ] Works on the live URL.
+- [x] Works on the live URL.
