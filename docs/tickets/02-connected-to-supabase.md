@@ -4,11 +4,11 @@
 
 **Blocked by:** 01.
 
-**Status:** todo
+**Status:** done
 
-- [ ] Supabase URL and publishable key are configured locally and in Vercel; no secret or service-role key is used in the browser.
+- [x] Supabase URL and publishable key are configured locally and in Vercel; no secret or service-role key is used in the browser.
 - [x] The `places` table is created with the agreed columns and seeded with three to five documented spots.
 - [x] Row Level Security (RLS) is enabled and an explicit policy allows anonymous visitors to read spots.
 - [x] Anonymous visitors cannot insert, update, or delete spot rows through the app's public credentials.
-- [ ] The live app successfully reads and displays place names from the table.
-- [ ] Works on the live URL.
+- [x] The live app successfully reads and displays place names from the table.
+- [x] Works on the live URL.
