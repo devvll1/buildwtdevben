@@ -54,6 +54,16 @@ type OpenMeteoResponse = {
   };
 };
 
+type ComfortEstimate = {
+  place: Place;
+  score: number;
+  rank: number;
+  isTied: boolean;
+  label: string;
+  forecastReasons: string[];
+  placeReasons: string[];
+};
+
 const iloiloTimeZone = "Asia/Manila";
 
 function formatForecastTime(timestamp: number, options: Intl.DateTimeFormatOptions) {
@@ -65,6 +75,176 @@ function formatForecastTime(timestamp: number, options: Intl.DateTimeFormatOptio
 
 function displayForecastValue(value: number | null, unit: string) {
   return value === null ? "Unavailable" : `${Math.round(value)}${unit}`;
+}
+
+function hasFullForecast(forecast: ForecastHour | undefined): forecast is ForecastHour {
+  return Boolean(
+    forecast &&
+      forecast.apparentTemperature !== null &&
+      forecast.humidity !== null &&
+      forecast.windSpeed !== null &&
+      forecast.precipitationProbability !== null,
+  );
+}
+
+function getWeatherScore(forecast: ForecastHour) {
+  let score = 50;
+  const reasons: string[] = [];
+  const apparentTemperature = forecast.apparentTemperature ?? 0;
+  const humidity = forecast.humidity ?? 0;
+  const windSpeed = forecast.windSpeed ?? 0;
+  const rainChance = forecast.precipitationProbability ?? 0;
+
+  if (apparentTemperature >= 34) {
+    score -= 18;
+    reasons.push("Very warm feels-like temperatures lower the estimate.");
+  } else if (apparentTemperature >= 30) {
+    score -= 10;
+    reasons.push("Warm feels-like temperatures lower the estimate.");
+  } else if (apparentTemperature <= 22) {
+    score += 8;
+    reasons.push("Milder temperatures support outdoor comfort.");
+  } else {
+    reasons.push("Feels-like temperature is in the estimate’s middle range.");
+  }
+
+  if (humidity >= 85) {
+    score -= 14;
+    reasons.push("High humidity lowers the estimate.");
+  } else if (humidity >= 70) {
+    score -= 7;
+    reasons.push("Elevated humidity slightly lowers the estimate.");
+  } else if (humidity <= 60) {
+    score += 4;
+    reasons.push("Lower humidity supports outdoor comfort.");
+  } else {
+    reasons.push("Humidity is in the estimate’s middle range.");
+  }
+
+  if (windSpeed < 3) {
+    score -= 4;
+    reasons.push("Very light wind provides little breeze.");
+  } else if (windSpeed <= 18) {
+    score += 5;
+    reasons.push("Moderate forecast wind supports a pleasant breeze.");
+  } else if (windSpeed > 30) {
+    score -= 7;
+    reasons.push("Strong forecast wind lowers the estimate.");
+  } else {
+    reasons.push("Forecast wind is outside the moderate-breeze range.");
+  }
+
+  if (rainChance >= 70) {
+    score -= 25;
+    reasons.push("High rain probability weighs strongly against outdoor plans.");
+  } else if (rainChance >= 40) {
+    score -= 14;
+    reasons.push("Rain is possible, which lowers the estimate.");
+  } else if (rainChance >= 20) {
+    score -= 6;
+    reasons.push("Some rain risk slightly lowers the estimate.");
+  } else if (rainChance <= 10) {
+    score += 3;
+    reasons.push("Low rain probability supports outdoor plans.");
+  } else {
+    reasons.push("Rain probability is in the estimate’s middle range.");
+  }
+
+  return { score, reasons };
+}
+
+function getPlaceAdjustment(place: Place, forecast: ForecastHour) {
+  let score = 0;
+  const reasons: string[] = [];
+  const warmConditions =
+    (forecast.apparentTemperature ?? 0) >= 29 || (forecast.humidity ?? 0) >= 75;
+
+  if (place.has_seating === true) {
+    score += 4;
+    reasons.push("Recorded seating adds a small rest-friendly adjustment.");
+  } else if (place.has_seating === false) {
+    score -= 3;
+    reasons.push("Seating is recorded as unavailable, so no seating benefit is included.");
+  } else {
+    reasons.push("Seating is not verified and does not affect the estimate.");
+  }
+
+  if (place.has_trees === true && warmConditions) {
+    score += 6;
+    reasons.push("Recorded trees add support in warm or humid conditions; they do not guarantee shade.");
+  } else if (place.has_trees === false && warmConditions) {
+    reasons.push("No trees are recorded, so there is no tree-related adjustment; other shade may still exist.");
+  } else if (place.has_trees === null) {
+    reasons.push("Trees are not verified and do not affect the estimate.");
+  } else {
+    reasons.push("Recorded trees do not change the estimate in these conditions.");
+  }
+
+  const shadeDescription = place.shade_description?.toLowerCase() ?? "";
+  if (warmConditions && shadeDescription) {
+    if (/no shade|little shade|limited shade|full sun|direct sun|unshaded/.test(shadeDescription)) {
+      score -= 6;
+      reasons.push(`Recorded shade detail (“${place.shade_description}”) lowers the estimate in warm or humid conditions.`);
+    } else if (/ample shade|good shade|mostly shaded|partial shade|tree shade|covered/.test(shadeDescription)) {
+      score += 6;
+      reasons.push(`Recorded shade detail (“${place.shade_description}”) supports the estimate in warm or humid conditions.`);
+    } else {
+      reasons.push(`Shade detail (“${place.shade_description}”) is shown but not scored because its wording is not covered by the simple rules.`);
+    }
+  } else if (!place.shade_description) {
+    reasons.push("Shade is not verified and does not affect the estimate.");
+  } else {
+    reasons.push(`Recorded shade detail: ${place.shade_description}; it does not change the estimate in these conditions.`);
+  }
+
+  const exposure = place.sun_exposure?.toLowerCase() ?? "";
+  if (warmConditions && exposure) {
+    if (/full sun|direct sun|high exposure|fully exposed/.test(exposure)) {
+      score -= 5;
+      reasons.push(`Recorded sun exposure (“${place.sun_exposure}”) lowers the estimate in warm or humid conditions.`);
+    } else if (/partial shade|mostly shaded|low exposure|shaded/.test(exposure)) {
+      score += 5;
+      reasons.push(`Recorded sun exposure (“${place.sun_exposure}”) supports the estimate in warm or humid conditions.`);
+    } else {
+      reasons.push(`Sun exposure (“${place.sun_exposure}”) is shown but not scored by the simple rules.`);
+    }
+  } else if (!place.sun_exposure) {
+    reasons.push("Sun exposure is not verified and does not affect the estimate.");
+  } else {
+    reasons.push(`Recorded sun exposure: ${place.sun_exposure}; it does not change the estimate in these conditions.`);
+  }
+
+  return { score, reasons };
+}
+
+function rankPlaces(places: Place[], forecast: ForecastHour): ComfortEstimate[] {
+  const weather = getWeatherScore(forecast);
+  const estimates = places.map((place) => {
+    const placeAdjustment = getPlaceAdjustment(place, forecast);
+    return {
+      place,
+      score: weather.score + placeAdjustment.score,
+      rank: 0,
+      isTied: false,
+      label: "",
+      forecastReasons: weather.reasons,
+      placeReasons: placeAdjustment.reasons,
+    };
+  });
+
+  estimates.sort((a, b) => b.score - a.score || a.place.name.localeCompare(b.place.name));
+  estimates.forEach((estimate) => {
+    estimate.rank = estimates.findIndex((candidate) => candidate.score === estimate.score) + 1;
+    estimate.isTied = estimates.filter((candidate) => candidate.score === estimate.score).length > 1;
+    estimate.label =
+      estimate.score >= 70
+        ? "More favorable estimate"
+        : estimate.score >= 50
+          ? "Mixed conditions"
+          : "Less favorable estimate";
+  });
+
+  return estimates;
 }
 
 function recordedValue(value: boolean | null) {
@@ -182,6 +362,16 @@ export default function Home() {
   const selectedForecast = forecastHours.find(
     (hour) => hour.time === selectedForecastTime,
   );
+  const canRankSpots = hasFullForecast(selectedForecast);
+  const comfortEstimates = canRankSpots
+    ? rankPlaces(places, selectedForecast)
+    : [];
+  const estimatesAreTied =
+    comfortEstimates.length > 1 &&
+    comfortEstimates.every((estimate) => estimate.score === comfortEstimates[0].score);
+  const displayedPlaces = canRankSpots
+    ? comfortEstimates.map((estimate) => estimate.place)
+    : places;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 sm:py-16">
@@ -293,6 +483,26 @@ export default function Home() {
           </p>
         </div>
 
+        {canRankSpots ? (
+          <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+            <p>
+              These are rule-based comfort estimates for the selected forecast hour. The same area-level weather forecast is used for every spot; recorded shade, trees, sun exposure, and seating can change each spot’s estimate. Unverified features do not affect its score.
+            </p>
+            <p>
+              Estimates are not measurements or guarantees of the exact conditions at a spot.
+              {estimatesAreTied
+                ? " These places currently tie because the recorded features do not distinguish their estimates."
+                : " Spot details come from the source and check date shown on each card."}
+            </p>
+          </div>
+        ) : (
+          <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground" role="status">
+            {isForecastLoading
+              ? "The forecast is loading. Spots are shown alphabetically and will remain unranked until a complete forecast is available."
+              : "A complete forecast is not available, so there is no weather-based ranking. Spots are shown alphabetically without a current comfort estimate."}
+          </p>
+        )}
+
         {isLoading ? (
           <Card><CardContent className="p-6">
             <p className="text-sm text-muted-foreground" role="status">Loading outdoor spots…</p>
@@ -309,7 +519,8 @@ export default function Home() {
           </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {places.map((place) => {
+            {displayedPlaces.map((place) => {
+              const estimate = comfortEstimates.find((item) => item.place.id === place.id);
               const mapUrl = `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`;
               return (
                 <Card className="flex flex-col overflow-hidden" key={place.id}>
@@ -317,6 +528,13 @@ export default function Home() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1.5">
                         <CardTitle className="text-xl">{place.name}</CardTitle>
+                        {estimate ? (
+                          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                            Rank #{estimate.rank}{estimate.isTied ? " (tie)" : ""} · {estimate.label}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not ranked</p>
+                        )}
                         <CardDescription className="flex items-center gap-1.5">
                           <MapPin aria-hidden="true" className="size-3.5 shrink-0" /> Iloilo City
                         </CardDescription>
@@ -334,6 +552,22 @@ export default function Home() {
                     <p className="text-sm leading-6 text-muted-foreground">{place.description}</p>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col gap-5">
+                    {estimate ? (
+                      <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
+                        <div>
+                          <p className="font-medium">Forecast factors</p>
+                          <p className="mt-1 leading-6 text-muted-foreground">
+                            Feels like {displayForecastValue(selectedForecast?.apparentTemperature ?? null, "°C")}, humidity {displayForecastValue(selectedForecast?.humidity ?? null, "%")}, wind {displayForecastValue(selectedForecast?.windSpeed ?? null, " km/h")}, and rain chance {displayForecastValue(selectedForecast?.precipitationProbability ?? null, "%")}. {estimate.forecastReasons.join(" ")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Documented spot features</p>
+                          <p className="mt-1 leading-6 text-muted-foreground">
+                            {estimate.placeReasons.join(" ")}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
                     <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                       <div className="space-y-1 rounded-lg bg-muted/60 p-3">
                         <dt className="flex items-center gap-2 font-medium"><Sun aria-hidden="true" className="size-4" />Shade</dt>
