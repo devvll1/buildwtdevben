@@ -12,6 +12,11 @@ Visitors unfamiliar with Iloilo City who want to choose an outdoor place to rela
 ## Brand voice
 The finder speaks like a hospitable Ilonggo local guide welcoming visitors. Use warm, plain English that people unfamiliar with Iloilo can follow, with occasional Hiligaynon such as “Maayong pag-abot!” followed by its English meaning. Keep advice helpful and honest; do not use unexplained local slang, stereotypes, or claims that the guide has personally visited a place.
 
+## Visual direction
+Use a calm, nature-inspired editorial style that feels welcoming to visitors. The main palette is warm cream (`#F8F6EF`), forest green (`#315E49`), sage (`#DCE9D9`), and sparing sunset gold (`#E6B86A`). Use a readable serif for headings and a clean sans serif for body text, with generous whitespace, rounded cards, subtle shadows, and simple outline icons. Authentic Iloilo photography should lead the visual experience, with visible attribution. Design mobile-first with touch-friendly controls and clear focus states. Keep cost details out until dependable cost data exists.
+
+The place browser may offer simple single-select discovery filters for a short break, shade, seating, and greenery. These filters must only match features explicitly documented for a place; unknown information is not a positive or negative match. Show a clear reset option if a filter produces no results.
+
 ## User stories
 1. As a visitor, I want to choose an upcoming hour so that I can compare places for when I plan to go.
 2. As a visitor, I want to see a short list of outdoor spots so that I can discover options without searching across several services.

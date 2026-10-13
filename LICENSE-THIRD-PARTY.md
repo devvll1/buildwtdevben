@@ -6,6 +6,15 @@ https://github.com/mattpocock/skills, used under the MIT licence below.
 
 `pitch` is original to this workshop.
 
+The Iloilo location photographs below are used under Creative Commons
+Attribution-ShareAlike 4.0 International (CC BY-SA 4.0). Photographs are
+displayed with CSS cropping and photographer credit links in the app.
+
+- **Jaro Plaza** — Patrickroque01, 2024-04-04. [Source](https://commons.wikimedia.org/wiki/File:Jaro_Plaza_(Jaro,_Iloilo_City;_04-04-2024).jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+- **Molo Plaza / Molo Church** — Patrickroque01, 2026-01-24. [Source](https://commons.wikimedia.org/wiki/File:Molo_Church,_Molo_Plaza,_Molo_Masion_back_drone_wide_(Molo,_Iloilo_City;_01-24-2026).jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+- **Plaza Libertad** — Alvin Casitas, 2024-10-28. [Source](https://commons.wikimedia.org/wiki/File:Center_of_Plaza_Libertad_with_a_statue_of_Jos%C3%A9_Rizal_-_2024.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+- **Iloilo River Esplanade** — Johngaje92, 2025-10-10. [Source](https://commons.wikimedia.org/wiki/File:Iloilo_River_Esplanade_I.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+
 ```
 MIT License
 

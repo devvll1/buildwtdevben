@@ -64,6 +64,31 @@ type ComfortEstimate = {
   placeReasons: string[];
 };
 
+type PlaceFilter = "all" | "shade" | "seating" | "greenery";
+
+const placePhotos: Record<string, { src: string; credit: string; url: string }> = {
+  jaro: {
+    src: "/images/jaro-plaza.jpg",
+    credit: "Photo: Patrickroque01 / Wikimedia Commons",
+    url: "https://commons.wikimedia.org/wiki/File:Jaro_Plaza_(Jaro,_Iloilo_City;_04-04-2024).jpg",
+  },
+  molo: {
+    src: "/images/molo-plaza.jpg",
+    credit: "Photo: Patrickroque01 / Wikimedia Commons",
+    url: "https://commons.wikimedia.org/wiki/File:Molo_Church,_Molo_Plaza,_Molo_Masion_back_drone_wide_(Molo,_Iloilo_City;_01-24-2026).jpg",
+  },
+  libertad: {
+    src: "/images/plaza-libertad.jpg",
+    credit: "Photo: Alvin Casitas / Wikimedia Commons",
+    url: "https://commons.wikimedia.org/wiki/File:Center_of_Plaza_Libertad_with_a_statue_of_Jos%C3%A9_Rizal_-_2024.jpg",
+  },
+};
+
+const esplanadePhoto = {
+  src: "/images/iloilo-esplanade.jpg",
+  url: "https://commons.wikimedia.org/wiki/File:Iloilo_River_Esplanade_I.jpg",
+};
+
 const iloiloTimeZone = "Asia/Manila";
 
 function formatForecastTime(timestamp: number, options: Intl.DateTimeFormatOptions) {
@@ -271,6 +296,7 @@ export default function Home() {
   const [selectedForecastTime, setSelectedForecastTime] = useState<number | null>(null);
   const [isForecastLoading, setIsForecastLoading] = useState(true);
   const [hasForecastError, setHasForecastError] = useState(false);
+  const [placeFilter, setPlaceFilter] = useState<PlaceFilter>("all");
 
   useEffect(() => {
     let isCurrent = true;
@@ -372,25 +398,51 @@ export default function Home() {
   const displayedPlaces = canRankSpots
     ? comfortEstimates.map((estimate) => estimate.place)
     : places;
+  const filteredPlaces = displayedPlaces.filter((place) => {
+    if (placeFilter === "all") return true;
+    if (placeFilter === "seating") return place.has_seating === true;
+    if (placeFilter === "greenery") return place.has_trees === true;
+    const shade = `${place.shade_description ?? ""} ${place.sun_exposure ?? ""}`.toLowerCase();
+    return /shade|shaded|covered|tree cover/.test(shade) && !/no shade|little shade|limited shade|full sun|direct sun|unshaded/.test(shade);
+  });
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 sm:py-16">
-      <header className="max-w-2xl space-y-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-900/10 bg-emerald-900/5 px-3 py-1 text-xs font-medium text-emerald-900 dark:text-emerald-200">
-          <Leaf aria-hidden="true" className="size-3.5" /> Iloilo Outdoor Comfort Finder
-        </span>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Maayong pag-abot!
-        </h1>
-        <p className="text-base leading-7 text-muted-foreground">
-          <span className="block font-medium text-foreground">That means “Welcome!” in Hiligaynon. I’m your friendly Ilonggo guide to a little fresh air.</span>
-          <span className="mt-1 block">Let’s find you a spot to slow down, feel the breeze, or enjoy a quiet moment. Pick a forecast hour and I’ll help you compare.</span>
-        </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 py-6 sm:px-7 sm:py-10 lg:gap-14">
+      <header className="grid items-center gap-7 overflow-hidden rounded-[1.75rem] border border-border/80 bg-card p-6 shadow-sm sm:p-9 lg:grid-cols-[1.05fr_0.95fr] lg:p-11">
+        <div className="space-y-5">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-secondary px-3 py-1.5 text-xs font-medium text-primary">
+            <Leaf aria-hidden="true" className="size-3.5" /> Chillo-Ilo · Iloilo City
+          </span>
+          <div className="space-y-3">
+            <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Maayong pag-abot! <span className="normal-case tracking-normal text-muted-foreground">Welcome!</span></p>
+            <h1 className="max-w-xl text-4xl leading-[1.08] text-foreground sm:text-5xl lg:text-[3.5rem]">
+              Find your little pocket of <span className="text-primary">calm.</span>
+            </h1>
+            <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+              New around Iloilo? I’d be happy to help you find a spot to slow down, feel the breeze, or enjoy a quiet moment.
+            </p>
+          </div>
+          <a href="#places" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            Explore places <ArrowUpRight aria-hidden="true" className="size-4" />
+          </a>
+        </div>
+        <figure className="relative min-h-64 overflow-hidden rounded-[1.25rem] bg-secondary sm:min-h-80 lg:min-h-[22rem]">
+          <img src={esplanadePhoto.src} alt="A riverside view along Iloilo River Esplanade" className="absolute inset-0 size-full object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#17271f]/70 via-transparent to-transparent" />
+          <figcaption className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3 text-white sm:inset-x-5 sm:bottom-5">
+            <span className="font-editorial text-2xl">A slower side of Iloilo</span>
+            <span className="flex flex-wrap justify-end gap-x-1 rounded-full bg-black/35 px-3 py-1.5 text-[10px] backdrop-blur-sm">
+              <a className="underline underline-offset-2" href={esplanadePhoto.url} target="_blank" rel="noreferrer">Photo: Johngaje92</a>
+              <span>· cropped ·</span>
+              <a className="underline underline-offset-2" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>
+            </span>
+          </figcaption>
+        </figure>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>How’s the weather looking?</CardTitle>
+      <Card className="rounded-[1.5rem] border-border/80 shadow-sm">
+        <CardHeader className="p-5 pb-4 sm:p-7 sm:pb-4">
+          <CardTitle className="text-2xl">A little forecast check</CardTitle>
           <CardDescription>
             A city forecast from{" "}
             <a
@@ -404,7 +456,7 @@ export default function Home() {
             . Each plaza can feel a little different, so think of this as a helpful heads-up.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-5 px-5 pb-5 sm:px-7 sm:pb-7">
           {isForecastLoading ? (
             <p className="text-sm text-muted-foreground" role="status">
               Taking a look at the forecast…
@@ -419,7 +471,7 @@ export default function Home() {
                 <label className="flex flex-col gap-2 text-sm font-medium" htmlFor="forecast-hour">
                   When are you thinking of heading out?
                   <select
-                    className="h-10 min-w-56 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="h-12 min-w-56 rounded-xl border border-input bg-background px-4 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     id="forecast-hour"
                     value={selectedForecast.time}
                     onChange={(event) => setSelectedForecastTime(Number(event.target.value))}
@@ -448,19 +500,19 @@ export default function Home() {
                 </p>
               </div>
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                <div className="space-y-1 rounded-xl bg-secondary/70 p-3.5">
                   <dt className="flex items-center gap-2 text-sm font-medium"><Thermometer aria-hidden="true" className="size-4" />Feels like</dt>
                   <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.apparentTemperature, "°C")}</dd>
                 </div>
-                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                <div className="space-y-1 rounded-xl bg-secondary/70 p-3.5">
                   <dt className="flex items-center gap-2 text-sm font-medium"><Droplets aria-hidden="true" className="size-4" />Humidity</dt>
                   <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.humidity, "%")}</dd>
                 </div>
-                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                <div className="space-y-1 rounded-xl bg-secondary/70 p-3.5">
                   <dt className="flex items-center gap-2 text-sm font-medium"><Wind aria-hidden="true" className="size-4" />Wind</dt>
                   <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.windSpeed, " km/h")}</dd>
                 </div>
-                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                <div className="space-y-1 rounded-xl bg-secondary/70 p-3.5">
                   <dt className="flex items-center gap-2 text-sm font-medium"><CloudRain aria-hidden="true" className="size-4" />Rain chance</dt>
                   <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.precipitationProbability, "%")}</dd>
                 </div>
@@ -474,16 +526,42 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      <section aria-labelledby="spots-heading" className="space-y-4">
+      <section id="places" aria-labelledby="spots-heading" className="space-y-5 scroll-mt-6">
         <div className="space-y-1">
-          <h2 id="spots-heading" className="text-xl font-semibold">Let’s find a spot to unwind</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Your Iloilo guide</p>
+          <h2 id="spots-heading" className="text-3xl text-foreground sm:text-4xl">Where would you like to unwind?</h2>
           <p className="text-sm text-muted-foreground">
-            Here’s what I found online. These details haven’t been checked on site recently, so I’ll mark anything I can’t confirm as not checked.
+            Here are a few places to start. Details come from linked sources and may need a fresh on-site check.
           </p>
         </div>
 
+        <div className="space-y-3 rounded-[1.25rem] border border-border/80 bg-card p-4 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-5 sm:p-5">
+          <div>
+            <p className="text-sm font-semibold">What sounds good?</p>
+            <p className="mt-1 text-xs text-muted-foreground">I’ll only filter by features that are listed for a place.</p>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:justify-end sm:pb-0" role="group" aria-label="Filter places by preference">
+            {([
+              ["all", "Any kind of break"],
+              ["shade", "Some shade"],
+              ["seating", "A place to sit"],
+              ["greenery", "Greenery"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={placeFilter === value}
+                onClick={() => setPlaceFilter(value)}
+                className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${placeFilter === value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-foreground hover:border-primary/40 hover:bg-secondary/60"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {canRankSpots ? (
-          <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <div className="space-y-2 rounded-2xl border border-primary/10 bg-secondary/70 p-4 text-sm text-foreground/80">
             <p>
               I match Iloilo’s forecast with the features reported for each spot. Trees, shade, and seating can help shape the estimate; details I haven’t checked won’t change it.
             </p>
@@ -493,7 +571,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground" role="status">
+          <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-sm" role="status">
             {isForecastLoading
               ? "I’m checking the forecast. For now, here are the spots in alphabetical order."
               : "I can’t make a weather-based comparison right now, so here are the spots in alphabetical order instead."}
@@ -514,14 +592,38 @@ export default function Home() {
           <Card><CardContent className="p-6">
             <p className="text-sm text-muted-foreground">I’m still gathering places to share. Please come back soon.</p>
           </CardContent></Card>
+        ) : filteredPlaces.length === 0 ? (
+          <Card className="rounded-[1.5rem] border-dashed shadow-none">
+            <CardContent className="flex flex-col items-start gap-3 p-6 sm:p-8">
+              <div className="rounded-full bg-secondary p-3 text-primary"><Leaf aria-hidden="true" className="size-5" /></div>
+              <div>
+                <h3 className="text-xl">I don’t have a listed match for that just yet.</h3>
+                <p className="mt-1 max-w-lg text-sm leading-6 text-muted-foreground">Some place details are still unverified, so I’m not guessing. Try all places or check back as more information is added.</p>
+              </div>
+              <button type="button" onClick={() => setPlaceFilter("all")} className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">Show all places</button>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {displayedPlaces.map((place) => {
+          <div className="grid gap-5 md:grid-cols-2">
+            {filteredPlaces.map((place) => {
               const estimate = comfortEstimates.find((item) => item.place.id === place.id);
               const mapUrl = `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`;
+              const normalizedName = place.name.toLowerCase();
+              const photoKey = normalizedName.includes("jaro") ? "jaro" : normalizedName.includes("molo") ? "molo" : normalizedName.includes("libertad") ? "libertad" : null;
+              const photo = photoKey ? placePhotos[photoKey] : null;
               return (
-                <Card className="flex flex-col overflow-hidden" key={place.id}>
-                  <CardHeader className="gap-3">
+                <Card className="flex flex-col overflow-hidden rounded-[1.5rem] border-border/80 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md" key={place.id}>
+                  {photo ? (
+                    <figure className="relative aspect-[16/9] overflow-hidden bg-secondary">
+                      <img src={photo.src} alt={`${place.name} in Iloilo City`} className="size-full object-cover transition duration-500 hover:scale-[1.02]" loading="lazy" />
+                      <figcaption className="absolute bottom-3 right-3 rounded-full bg-black/45 px-3 py-1.5 text-[10px] text-white backdrop-blur-sm">
+                        <a href={photo.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">{photo.credit}</a>
+                        <span>· cropped ·</span>
+                        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline underline-offset-2">CC BY-SA 4.0</a>
+                      </figcaption>
+                    </figure>
+                  ) : null}
+                  <CardHeader className="gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1.5">
                         <CardTitle className="text-xl">{place.name}</CardTitle>
@@ -566,19 +668,19 @@ export default function Home() {
                       </div>
                     ) : null}
                     <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                      <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                      <div className="space-y-1 rounded-xl bg-secondary/60 p-3.5">
                         <dt className="flex items-center gap-2 font-medium"><Sun aria-hidden="true" className="size-4" />Shade</dt>
                         <dd className="text-muted-foreground">{place.shade_description || "Not checked yet"}</dd>
                       </div>
-                      <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                      <div className="space-y-1 rounded-xl bg-secondary/60 p-3.5">
                         <dt className="flex items-center gap-2 font-medium"><Trees aria-hidden="true" className="size-4" />Trees</dt>
                         <dd className="text-muted-foreground">{recordedValue(place.has_trees)}</dd>
                       </div>
-                      <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                      <div className="space-y-1 rounded-xl bg-secondary/60 p-3.5">
                         <dt className="flex items-center gap-2 font-medium"><Armchair aria-hidden="true" className="size-4" />Seating</dt>
                         <dd className="text-muted-foreground">{recordedValue(place.has_seating)}</dd>
                       </div>
-                      <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                      <div className="space-y-1 rounded-xl bg-secondary/60 p-3.5">
                         <dt className="flex items-center gap-2 font-medium"><Sun aria-hidden="true" className="size-4" />Sun exposure</dt>
                         <dd className="text-muted-foreground">{place.sun_exposure || "Not checked yet"}</dd>
                       </div>
