@@ -10,13 +10,16 @@ import { createBrowserClient } from "@supabase/ssr";
  */
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !anonKey) {
     throw new Error(
       "Supabase env vars missing. Copy .env.example to .env.local and fill in " +
-        "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your " +
-        "Supabase project (click Connect). Add them in Vercel too.",
+        "NEXT_PUBLIC_SUPABASE_URL and a publishable key in " +
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or " +
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY. Add them in Vercel too.",
     );
   }
 
