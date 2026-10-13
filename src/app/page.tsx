@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Leaf, MapPin, Trees, Armchair, Sun } from "lucide-react";
+import {
+  ArrowUpRight,
+  Armchair,
+  CloudRain,
+  Droplets,
+  Leaf,
+  MapPin,
+  Sun,
+  Thermometer,
+  Trees,
+  Wind,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -25,6 +36,37 @@ type Place = {
   verified_at: string;
 };
 
+type ForecastHour = {
+  time: number;
+  apparentTemperature: number | null;
+  humidity: number | null;
+  windSpeed: number | null;
+  precipitationProbability: number | null;
+};
+
+type OpenMeteoResponse = {
+  hourly?: {
+    time?: number[];
+    apparent_temperature?: (number | null)[];
+    relative_humidity_2m?: (number | null)[];
+    wind_speed_10m?: (number | null)[];
+    precipitation_probability?: (number | null)[];
+  };
+};
+
+const iloiloTimeZone = "Asia/Manila";
+
+function formatForecastTime(timestamp: number, options: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat("en-PH", {
+    ...options,
+    timeZone: iloiloTimeZone,
+  }).format(new Date(timestamp * 1000));
+}
+
+function displayForecastValue(value: number | null, unit: string) {
+  return value === null ? "Unavailable" : `${Math.round(value)}${unit}`;
+}
+
 function recordedValue(value: boolean | null) {
   if (value === null) return "Not verified";
   return value ? "Available" : "Not recorded";
@@ -45,6 +87,10 @@ export default function Home() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [forecastHours, setForecastHours] = useState<ForecastHour[]>([]);
+  const [selectedForecastTime, setSelectedForecastTime] = useState<number | null>(null);
+  const [isForecastLoading, setIsForecastLoading] = useState(true);
+  const [hasForecastError, setHasForecastError] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -74,6 +120,69 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadForecast() {
+      try {
+        const url = new URL("https://api.open-meteo.com/v1/forecast");
+        url.search = new URLSearchParams({
+          latitude: "10.7202",
+          longitude: "122.5621",
+          hourly:
+            "apparent_temperature,relative_humidity_2m,wind_speed_10m,precipitation_probability",
+          timezone: iloiloTimeZone,
+          timeformat: "unixtime",
+          forecast_days: "2",
+          temperature_unit: "celsius",
+          wind_speed_unit: "kmh",
+        }).toString();
+
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error("Forecast request failed");
+
+        const result = (await response.json()) as OpenMeteoResponse;
+        const hourly = result.hourly;
+        if (
+          !hourly?.time ||
+          !hourly.apparent_temperature ||
+          !hourly.relative_humidity_2m ||
+          !hourly.wind_speed_10m ||
+          !hourly.precipitation_probability
+        ) {
+          throw new Error("Forecast response is incomplete");
+        }
+
+        const now = Date.now();
+        const upcomingHours = hourly.time
+          .map((time, index) => ({
+            time,
+            apparentTemperature: hourly.apparent_temperature?.[index] ?? null,
+            humidity: hourly.relative_humidity_2m?.[index] ?? null,
+            windSpeed: hourly.wind_speed_10m?.[index] ?? null,
+            precipitationProbability:
+              hourly.precipitation_probability?.[index] ?? null,
+          }))
+          .filter((hour) => hour.time * 1000 >= now);
+
+        if (upcomingHours.length === 0) throw new Error("No upcoming forecast hours");
+        setForecastHours(upcomingHours);
+        setSelectedForecastTime(upcomingHours[0].time);
+      } catch (error) {
+        if (!controller.signal.aborted) setHasForecastError(true);
+      } finally {
+        if (!controller.signal.aborted) setIsForecastLoading(false);
+      }
+    }
+
+    void loadForecast();
+    return () => controller.abort();
+  }, []);
+
+  const selectedForecast = forecastHours.find(
+    (hour) => hour.time === selectedForecastTime,
+  );
+
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 sm:py-16">
       <header className="max-w-2xl space-y-4">
@@ -88,6 +197,92 @@ export default function Home() {
           and open a spot in your map app to plan your visit.
         </p>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hourly forecast for Iloilo City</CardTitle>
+          <CardDescription>
+            Area-level forecast estimates from{" "}
+            <a
+              className="underline underline-offset-4 hover:text-foreground"
+              href="https://open-meteo.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open-Meteo
+            </a>
+            . Conditions at an individual spot may differ.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {isForecastLoading ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              Loading the hourly forecast…
+            </p>
+          ) : hasForecastError ? (
+            <p className="text-sm text-destructive" role="alert">
+              We couldn’t load the weather forecast. Check your connection and refresh the page to try again.
+            </p>
+          ) : selectedForecast ? (
+            <>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <label className="flex flex-col gap-2 text-sm font-medium" htmlFor="forecast-hour">
+                  Choose a forecast hour
+                  <select
+                    className="h-10 min-w-56 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    id="forecast-hour"
+                    value={selectedForecast.time}
+                    onChange={(event) => setSelectedForecastTime(Number(event.target.value))}
+                  >
+                    {forecastHours.map((hour) => (
+                      <option key={hour.time} value={hour.time}>
+                        {formatForecastTime(hour.time, {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Forecast for {formatForecastTime(selectedForecast.time, {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })} (Iloilo time)
+                </p>
+              </div>
+              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                  <dt className="flex items-center gap-2 text-sm font-medium"><Thermometer aria-hidden="true" className="size-4" />Feels like</dt>
+                  <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.apparentTemperature, "°C")}</dd>
+                </div>
+                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                  <dt className="flex items-center gap-2 text-sm font-medium"><Droplets aria-hidden="true" className="size-4" />Humidity</dt>
+                  <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.humidity, "%")}</dd>
+                </div>
+                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                  <dt className="flex items-center gap-2 text-sm font-medium"><Wind aria-hidden="true" className="size-4" />Wind</dt>
+                  <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.windSpeed, " km/h")}</dd>
+                </div>
+                <div className="space-y-1 rounded-lg bg-muted/60 p-3">
+                  <dt className="flex items-center gap-2 text-sm font-medium"><CloudRain aria-hidden="true" className="size-4" />Rain chance</dt>
+                  <dd className="text-lg font-semibold">{displayForecastValue(selectedForecast.precipitationProbability, "%")}</dd>
+                </div>
+              </dl>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground" role="status">
+              No upcoming forecast hours are currently available.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <section aria-labelledby="spots-heading" className="space-y-4">
         <div className="space-y-1">
