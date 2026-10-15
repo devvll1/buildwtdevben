@@ -28,10 +28,13 @@ type Place = {
   latitude: number;
   longitude: number;
   description: string;
+  place_type: string | null;
   shade_description: string | null;
   has_trees: boolean | null;
   has_seating: boolean | null;
   sun_exposure: string | null;
+  nearby_food_description: string | null;
+  commute_cost_description: string | null;
   source_url: string;
   verified_at: string;
 };
@@ -307,7 +310,7 @@ export default function Home() {
         const { data, error } = await supabase
           .from("places")
           .select(
-            "id, name, latitude, longitude, description, shade_description, has_trees, has_seating, sun_exposure, source_url, verified_at",
+            "id, name, latitude, longitude, description, place_type, shade_description, has_trees, has_seating, sun_exposure, nearby_food_description, commute_cost_description, source_url, verified_at",
           )
           .order("name");
 
@@ -649,6 +652,20 @@ export default function Home() {
                       </a>
                     </div>
                     <p className="text-sm leading-6 text-muted-foreground">{place.description}</p>
+                    <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+                      <div className="rounded-lg border border-border/70 px-3 py-2.5">
+                        <dt className="text-xs font-medium text-muted-foreground">Place type</dt>
+                        <dd className="mt-1">{place.place_type || "Not verified"}</dd>
+                      </div>
+                      <div className="rounded-lg border border-border/70 px-3 py-2.5">
+                        <dt className="text-xs font-medium text-muted-foreground">Nearby food</dt>
+                        <dd className="mt-1">{place.nearby_food_description || "Not verified"}</dd>
+                      </div>
+                      <div className="rounded-lg border border-border/70 px-3 py-2.5">
+                        <dt className="text-xs font-medium text-muted-foreground">Commute cost</dt>
+                        <dd className="mt-1">{place.commute_cost_description || "Not verified"}</dd>
+                      </div>
+                    </dl>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col gap-5">
                     {estimate ? (
