@@ -67,9 +67,14 @@ type ComfortEstimate = {
   placeReasons: string[];
 };
 
-type PlaceFilter = "all" | "shade" | "seating" | "greenery";
+type PlaceFilter = "all" | "shade" | "seating" | "greenery" | "nearby-food";
 
 const placePhotos: Record<string, { src: string; credit: string; url: string }> = {
+  esplanade: {
+    src: "/images/iloilo-esplanade.jpg",
+    credit: "Photo: Johngaje92 / Wikimedia Commons",
+    url: "https://commons.wikimedia.org/wiki/File:Iloilo_River_Esplanade_I.jpg",
+  },
   jaro: {
     src: "/images/jaro-plaza.jpg",
     credit: "Photo: Patrickroque01 / Wikimedia Commons",
@@ -405,6 +410,7 @@ export default function Home() {
     if (placeFilter === "all") return true;
     if (placeFilter === "seating") return place.has_seating === true;
     if (placeFilter === "greenery") return place.has_trees === true;
+    if (placeFilter === "nearby-food") return Boolean(place.nearby_food_description?.trim());
     const shade = `${place.shade_description ?? ""} ${place.sun_exposure ?? ""}`.toLowerCase();
     return /shade|shaded|covered|tree cover/.test(shade) && !/no shade|little shade|limited shade|full sun|direct sun|unshaded/.test(shade);
   });
@@ -549,6 +555,7 @@ export default function Home() {
               ["shade", "Some shade"],
               ["seating", "A place to sit"],
               ["greenery", "Greenery"],
+              ["nearby-food", "Nearby food"],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -612,7 +619,15 @@ export default function Home() {
               const estimate = comfortEstimates.find((item) => item.place.id === place.id);
               const mapUrl = `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`;
               const normalizedName = place.name.toLowerCase();
-              const photoKey = normalizedName.includes("jaro") ? "jaro" : normalizedName.includes("molo") ? "molo" : normalizedName.includes("libertad") ? "libertad" : null;
+              const photoKey = normalizedName.includes("esplanade")
+                ? "esplanade"
+                : normalizedName.includes("jaro")
+                  ? "jaro"
+                  : normalizedName.includes("molo")
+                    ? "molo"
+                    : normalizedName.includes("libertad")
+                      ? "libertad"
+                      : null;
               const photo = photoKey ? placePhotos[photoKey] : null;
               return (
                 <Card className="flex flex-col overflow-hidden rounded-[1.5rem] border-border/80 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md" key={place.id}>
