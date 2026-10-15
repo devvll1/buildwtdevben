@@ -4,7 +4,7 @@
 
 **Blocked by:** 07.
 
-**Status:** in progress
+**Status:** done
 
 - [x] Apply the cream, forest green, sage, and restrained gold palette with editorial serif headings and readable sans-serif body text.
 - [x] Introduce authentic Iloilo photography in the welcome area and place cards, with photographer and license attribution.
@@ -13,4 +13,4 @@
 - [x] Show a helpful empty state and reset control when no documented spots match a selected filter.
 - [x] Preserve the friendly Ilonggo voice, forecast explanations, maps, and source/date transparency.
 - [x] Do not display budget information without dependable cost data.
-- [ ] Build, deploy, and confirm the live experience.
+- [x] Build, deploy, and confirm the live experience.
